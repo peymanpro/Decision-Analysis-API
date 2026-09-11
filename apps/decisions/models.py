@@ -51,3 +51,26 @@ class Criterion(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Option(models.Model):
+    decision = models.ForeignKey(
+        Decision,
+        on_delete=models.CASCADE,
+        related_name="options",
+    )
+    name = models.CharField(max_length=200)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("id",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=("decision", "name"),
+                name="unique_option_name_per_decision",
+            ),
+        ]
+
+    def __str__(self):
+        return self.name
