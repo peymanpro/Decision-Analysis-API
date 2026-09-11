@@ -27,6 +27,11 @@ Each decision belongs to one user.
 
 ## Features
 
+- Environment-based configuration
+- PostgreSQL database
+- Docker Compose development environment
+- Database health check
+- Application health endpoint
 - JWT authentication — Planned
 - Decision management — Planned
 - Criterion management — Planned
@@ -36,8 +41,6 @@ Each decision belongs to one user.
 - Ranking and tie handling — Planned
 - Explainable criterion contributions — Planned
 - OpenAPI / Swagger — Planned
-- PostgreSQL — Planned
-- Docker — In Progress
 - Railway deployment — Planned
 
 ## API
@@ -47,6 +50,16 @@ Base path:
 ```text
 /api/v1/
 ```
+
+### Health
+
+```text
+GET    /health/
+```
+
+Returns the application health status.
+
+Status: Implemented
 
 ### Authentication
 
@@ -171,14 +184,16 @@ Incomplete evaluations are rejected rather than treating missing scores as zero.
 
 ## Tech Stack
 
-- Python
-- Django
-- Django REST Framework
-- PostgreSQL
-- JWT
-- pytest
+- Python 3.12
+- Django 6.1.1
+- Django REST Framework 3.18.1
+- PostgreSQL 17
+- django-environ
+- Psycopg 3
+- JWT — Planned
+- pytest — Planned
 - Docker
-- Railway
+- Railway — Planned
 
 ## Architecture
 
@@ -216,13 +231,25 @@ python -m venv .venv
 python -m pip install -r requirements.txt
 ```
 
-### Django
+### Docker Compose
 
 ```powershell
-python manage.py runserver
+docker compose up -d --build
 ```
 
-PostgreSQL configuration and Docker-based local development will be completed during the implementation phases.
+The development stack starts Django and PostgreSQL.
+
+### Database migrations
+
+```powershell
+docker compose exec web python manage.py migrate
+```
+
+### Health check
+
+```text
+http://127.0.0.1:8000/health/
+```
 
 ## Testing
 
@@ -248,9 +275,7 @@ Production and Swagger URLs will be added after deployment verification.
 
 ## Project Status
 
-Bootstrap / In Progress
-
-The domain model and API are not implemented yet.
+Phase 2 complete: application configuration, PostgreSQL integration, Docker Compose runtime, migrations, and health endpoint are implemented.
 
 ## License
 
