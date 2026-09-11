@@ -74,3 +74,35 @@ class Option(models.Model):
 
     def __str__(self):
         return self.name
+
+
+class Score(models.Model):
+    option = models.ForeignKey(
+        Option,
+        on_delete=models.CASCADE,
+        related_name="scores",
+    )
+    criterion = models.ForeignKey(
+        Criterion,
+        on_delete=models.CASCADE,
+        related_name="scores",
+    )
+    score = models.DecimalField(max_digits=4, decimal_places=2)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ("id",)
+        constraints = [
+            models.UniqueConstraint(
+                fields=("option", "criterion"),
+                name="unique_score_per_option_criterion",
+            ),
+            models.CheckConstraint(
+                condition=models.Q(score__gte=Decimal("0"), score__lte=Decimal("10")),
+                name="score_between_zero_and_ten",
+            ),
+        ]
+
+    def __str__(self):
+        return f"{self.option} - {self.criterion}: {self.score}"
