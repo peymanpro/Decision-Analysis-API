@@ -10,6 +10,7 @@ from .models import Decision
 
 
 class DecisionEvaluationView(APIView):
+    serializer_class = EvaluationResponseSerializer
     permission_classes = (IsAuthenticated,)
 
     def _evaluate(self, request, decision_id):

@@ -1,20 +1,20 @@
 ﻿# Decision Analysis API
 
-A small REST API for structured decision analysis and weighted evaluation.
+A small REST API for structured decision analysis and deterministic weighted evaluation.
 
 ## Overview
 
-Decision Analysis API allows authenticated users to create decisions, define criteria and options, assign criterion weights, score options, and obtain a deterministic weighted evaluation with ranking and explainable criterion contributions.
+Decision Analysis API allows authenticated users to create decisions, define criteria and options, assign criterion weights, score options, and obtain a deterministic weighted evaluation with ranking, tie handling, and explainable criterion contributions.
 
 ## Scope
 
 The initial domain consists of:
 
-- User
-- Decision
-- Criterion
-- Option
-- Score
+* User
+* Decision
+* Criterion
+* Option
+* Score
 
 ```text
 Decision
@@ -27,21 +27,22 @@ Each decision belongs to one user.
 
 ## Features
 
-- Environment-based configuration
-- PostgreSQL database
-- Docker Compose development environment
-- Database health check
-- Application health endpoint
-- JWT authentication — Planned
-- Decision management — Planned
-- Criterion management — Planned
-- Option management — Planned
-- Score management — Planned
-- Weighted evaluation — Planned
-- Ranking and tie handling — Planned
-- Explainable criterion contributions — Planned
-- OpenAPI / Swagger — Planned
-- Railway deployment — Planned
+* Environment-based configuration — Implemented
+* PostgreSQL database — Implemented
+* Docker Compose development environment — Implemented
+* Database health check — Implemented
+* Application health endpoint — Implemented
+* JWT authentication — Implemented
+* Decision management — Implemented
+* Criterion management — Implemented
+* Option management — Implemented
+* Score management — Implemented
+* Weighted evaluation — Implemented
+* Ranking and tie handling — Implemented
+* Explainable criterion contributions — Implemented
+* OpenAPI / Swagger — Implemented
+* Automated tests — Implemented
+* Railway deployment — Planned
 
 ## API
 
@@ -65,11 +66,13 @@ Status: Implemented
 
 ```text
 POST   /api/v1/auth/register/
-POST   /api/v1/auth/login/
-POST   /api/v1/auth/refresh/
+POST   /api/v1/auth/token/
+POST   /api/v1/auth/token/refresh/
 ```
 
-Status: Planned
+JWT-based authentication is used for protected API operations.
+
+Status: Implemented
 
 ### Decisions
 
@@ -81,7 +84,9 @@ PATCH  /api/v1/decisions/{id}/
 DELETE /api/v1/decisions/{id}/
 ```
 
-Status: Planned
+Users can access only their own decisions.
+
+Status: Implemented
 
 ### Criteria
 
@@ -92,7 +97,15 @@ PATCH  /api/v1/criteria/{id}/
 DELETE /api/v1/criteria/{id}/
 ```
 
-Status: Planned
+Criterion weights must satisfy:
+
+```text
+0 < weight <= 1
+```
+
+The total weight must equal exactly `1` at evaluation time.
+
+Status: Implemented
 
 ### Options
 
@@ -103,7 +116,7 @@ PATCH  /api/v1/options/{id}/
 DELETE /api/v1/options/{id}/
 ```
 
-Status: Planned
+Status: Implemented
 
 ### Scores
 
@@ -111,16 +124,39 @@ Status: Planned
 PUT    /api/v1/options/{option_id}/scores/{criterion_id}/
 ```
 
-Status: Planned
+The endpoint creates or updates the score for a specific option/criterion pair.
+
+Score constraints:
+
+```text
+0 <= score <= 10
+```
+
+Scores support at most two decimal places.
+
+Status: Implemented
 
 ### Evaluation
 
 ```text
 POST   /api/v1/decisions/{id}/evaluate/
-GET    /api/v1/decisions/{id}/result/
+GET    /api/v1/decisions/{id}/evaluate/
 ```
 
-Status: Planned
+Both endpoints return the deterministic evaluation result.
+
+Status: Implemented
+
+### OpenAPI / Swagger
+
+```text
+GET    /api/schema/
+GET    /api/docs/
+```
+
+The OpenAPI schema is generated with `drf-spectacular`.
+
+Status: Implemented
 
 ## Evaluation Model
 
@@ -131,7 +167,7 @@ Status: Planned
 Σ weight_i = 1
 ```
 
-Criterion weights may be entered incrementally. At evaluation time, the sum of all criterion weights for the decision must equal exactly 1.
+Criterion weights may be entered incrementally. At evaluation time, the sum of all criterion weights for the decision must equal exactly `1`.
 
 ### Score Constraints
 
@@ -153,7 +189,9 @@ FinalScore(option) = Σ(weight_i × score_i)
 Contribution_i = weight_i × score_i
 ```
 
-Domain calculations use Decimal arithmetic. Intermediate values are not rounded before aggregation; rounding is applied only for presentation.
+Domain calculations use `Decimal` arithmetic.
+
+Intermediate calculation values are not rounded before aggregation. Rounding is applied only for presentation.
 
 ### Ranking
 
@@ -165,13 +203,15 @@ Options are ranked from highest final score to lowest.
 
 ### Tie
 
-Equal final scores receive the same rank. No artificial winner is selected.
+Equal final scores receive the same rank.
+
+No artificial winner is selected.
 
 When the highest-ranked options are tied:
 
 ```json
 {
-  "winner": null,
+  "winner_option_id": null,
   "is_tie": true
 }
 ```
@@ -182,18 +222,41 @@ Every option must have a score for every criterion before evaluation.
 
 Incomplete evaluations are rejected rather than treating missing scores as zero.
 
+## Example
+
+Consider two criteria:
+
+```text
+Cost     weight = 0.60
+Quality  weight = 0.40
+```
+
+For an option with:
+
+```text
+Cost     score = 8.00
+Quality  score = 9.00
+```
+
+The final score is:
+
+```text
+(0.60 × 8.00) + (0.40 × 9.00) = 8.40
+```
+
 ## Tech Stack
 
-- Python 3.12
-- Django 6.1.1
-- Django REST Framework 3.18.1
-- PostgreSQL 17
-- django-environ
-- Psycopg 3
-- JWT — Planned
-- pytest — Planned
-- Docker
-- Railway — Planned
+* Python 3.12
+* Django 6.1.1
+* Django REST Framework 3.18.1
+* PostgreSQL 17
+* django-environ 0.14.0
+* Psycopg 3.3.5
+* SimpleJWT 5.5.1
+* drf-spectacular 0.30.0
+* Docker
+* Docker Compose
+* Railway — Planned
 
 ## Architecture
 
@@ -213,15 +276,15 @@ Django ORM
 PostgreSQL
 ```
 
-Business logic is kept out of large views. Services are used for meaningful application use cases such as evaluation.
+Business logic is kept out of large views. Meaningful application logic, especially evaluation, is implemented in the service layer.
 
 ## Running Locally
 
 ### Prerequisites
 
-- Python 3.12
-- Docker
-- Docker Compose
+* Python 3.12
+* Docker
+* Docker Compose
 
 ### Python environment
 
@@ -237,8 +300,6 @@ python -m pip install -r requirements.txt
 docker compose up -d --build
 ```
 
-The development stack starts Django and PostgreSQL.
-
 ### Database migrations
 
 ```powershell
@@ -251,13 +312,29 @@ docker compose exec web python manage.py migrate
 http://127.0.0.1:8000/health/
 ```
 
+### Swagger UI
+
+```text
+http://127.0.0.1:8000/api/docs/
+```
+
+### OpenAPI schema
+
+```text
+http://127.0.0.1:8000/api/schema/
+```
+
 ## Testing
 
-pytest and pytest-django configuration will be added in the testing phase.
+The project uses Django's test framework with Django REST Framework API tests.
 
-## Swagger / OpenAPI
+Run the complete test suite inside Docker:
 
-OpenAPI schema and Swagger UI will be added during implementation.
+```powershell
+docker compose run --rm web python manage.py test apps.accounts apps.decisions -v 2
+```
+
+The current test suite covers authentication, decision ownership, criteria, options, scores, evaluation, incomplete scores, weight validation, ranking, and ties.
 
 ## Deployment
 
@@ -271,11 +348,24 @@ Railway
    └── PostgreSQL
 ```
 
-Production and Swagger URLs will be added after deployment verification.
+Deployment verification remains planned.
 
 ## Project Status
 
-Phase 2 complete: application configuration, PostgreSQL integration, Docker Compose runtime, migrations, and health endpoint are implemented.
+Core application functionality is implemented:
+
+* Authentication
+* Decision management
+* Criteria management
+* Option management
+* Score management
+* Deterministic weighted evaluation
+* Ranking and tie handling
+* OpenAPI / Swagger
+* Automated tests
+* Dockerized development environment
+
+Remaining work is focused on final quality checks, documentation polish, production configuration, and Railway deployment.
 
 ## License
 

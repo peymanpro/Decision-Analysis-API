@@ -8,6 +8,7 @@ from .models import Criterion, Option, Score
 from .score_serializers import ScoreSerializer
 
 class ScoreUpsertView(APIView):
+    serializer_class = ScoreSerializer
     permission_classes = (IsAuthenticated,)
 
     def put(self, request, option_id, criterion_id):
