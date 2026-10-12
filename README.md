@@ -218,6 +218,10 @@ docker-compose down
 
 Completed. The API is production-ready for deployment on your own infrastructure.
 
+## Relationship to the broader decision-support work
+
+This repository is a focused API for evaluating decisions through explicit criteria, options, scores, and evaluations. For the wider evidence-aware workflow—including adaptive interviews, source retrieval, evidence provenance, specialist perspectives, evaluation artifacts, safety checks, and audit events—see [Evidence-Grounded Decision Support](https://github.com/peymanpro/Evidence-Grounded-Decision-Support). The two repositories represent different scopes; this API is not the implementation of the larger system.
+
 ## License
 
 See LICENSE file for details.
